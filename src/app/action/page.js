@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 // Renders description text with [img:/path.png] tags as images
 function RichDescription({ text, className }) {
   if (!text) return null;
@@ -91,10 +91,17 @@ export default function ActionPage() {
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [address, setAddress] = useState("");
+  const [address, setAddress] = useState(""); // confirmed address from API
+  const [addressQuery, setAddressQuery] = useState(""); // what user types
 
   const [selectedCampaignId, setSelectedCampaignId] = useState(null);
   const [selectedRecipientIds, setSelectedRecipientIds] = useState(new Set());
+
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [addressLoading, setAddressLoading] = useState(false);
+  const addressRef = useRef(null);
+  const debounceRef = useRef(null);
 
   const [email, setEmail] = useState("");
   const [emailProvider, setEmailProvider] = useState(null); // "gmail" | "outlook" | "yahoo" | "other" | null
@@ -126,6 +133,113 @@ export default function ActionPage() {
   useEffect(() => {
     fetchCampaigns();
   }, []);
+
+  const autocompleteService = useRef(null);
+
+  // Load Google Maps script dynamically
+  useEffect(() => {
+    if (window.google?.maps?.places) return;
+    const existing = document.querySelector(
+      'script[src*="maps.googleapis.com"]'
+    );
+    if (existing) return;
+
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY}&libraries=places`;
+    script.async = true;
+    document.head.appendChild(script);
+  }, []);
+
+  function searchAddress(query) {
+    if (query.length < 3) {
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    if (!window.google?.maps?.places) return;
+    if (!autocompleteService.current) {
+      autocompleteService.current =
+        new window.google.maps.places.AutocompleteService();
+    }
+
+    setAddressLoading(true);
+    const riCenter = new window.google.maps.LatLng(40.762, -73.95);
+    autocompleteService.current.getPlacePredictions(
+      {
+        input: query,
+        types: ["address"],
+        componentRestrictions: { country: "us" },
+        location: riCenter,
+        radius: 5000,
+      },
+      (predictions, status) => {
+        setAddressLoading(false);
+        if (
+          status === window.google.maps.places.PlacesServiceStatus.OK &&
+          predictions
+        ) {
+          const results = predictions.map((p) => ({
+            placeId: p.place_id,
+            main: p.structured_formatting.main_text,
+            secondary: p.structured_formatting.secondary_text || "",
+            full: p.description,
+          }));
+          setAddressSuggestions(results);
+          setShowSuggestions(results.length > 0);
+        } else {
+          setAddressSuggestions([]);
+          setShowSuggestions(false);
+        }
+      }
+    );
+  }
+
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+
+  function handleAddressChange(value) {
+    setAddressQuery(value);
+    setAddress(""); // clear confirmed address when user edits
+    setHighlightedIndex(-1);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => searchAddress(value), 350);
+  }
+
+  function selectSuggestion(suggestion) {
+    if (!suggestion?.full) return;
+    // Remove ", USA" / ", United States" suffix for cleaner display
+    const cleaned = suggestion.full.replace(/, (USA|United States)$/, "");
+    setAddress(cleaned);
+    setAddressQuery(cleaned);
+    setShowSuggestions(false);
+    setAddressSuggestions([]);
+    setHighlightedIndex(-1);
+  }
+
+  function handleAddressKeyDown(e) {
+    if (!showSuggestions || addressSuggestions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev < addressSuggestions.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev > 0 ? prev - 1 : addressSuggestions.length - 1
+      );
+    } else if (e.key === "Enter" && highlightedIndex >= 0) {
+      e.preventDefault();
+      selectSuggestion(addressSuggestions[highlightedIndex]);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+      setHighlightedIndex(-1);
+    }
+  }
+
+  function handleAddressBlur() {
+    // Delay hiding so click on suggestion can fire first
+    setTimeout(() => setShowSuggestions(false), 200);
+  }
 
   const selectedCampaign = campaigns.find((c) => c.id === selectedCampaignId);
 
@@ -330,22 +444,75 @@ export default function ActionPage() {
                 className="w-full rounded-lg border border-navy-200 bg-white px-3 py-2.5 text-navy-900 placeholder:text-navy-300 transition focus:border-navy-400 focus:ring-2 focus:ring-amber-500/30 focus-visible:outline-none"
               />
             </div>
-            <div>
+            <div className="relative">
               <label
                 htmlFor="address"
                 className="mb-1 block text-sm font-medium text-navy-800"
               >
                 Street Address <span className="text-red-500">*</span>
               </label>
-              <input
-                id="address"
-                type="text"
-                required
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="455 Main Street"
-                className="w-full rounded-lg border border-navy-200 bg-white px-3 py-2.5 text-navy-900 placeholder:text-navy-300 transition focus:border-navy-400 focus:ring-2 focus:ring-amber-500/30 focus-visible:outline-none"
-              />
+              <div className="relative">
+                <input
+                  ref={addressRef}
+                  id="address"
+                  type="text"
+                  required
+                  autoComplete="off"
+                  value={addressQuery}
+                  onChange={(e) => handleAddressChange(e.target.value)}
+                  onKeyDown={handleAddressKeyDown}
+                  onBlur={handleAddressBlur}
+                  onFocus={() => {
+                    if (addressSuggestions.length > 0) setShowSuggestions(true);
+                  }}
+                  placeholder="Start typing your address..."
+                  className="w-full rounded-lg border border-navy-200 bg-white px-3 py-2.5 text-navy-900 placeholder:text-navy-300 transition focus:border-navy-400 focus:ring-2 focus:ring-amber-500/30 focus-visible:outline-none"
+                />
+                {addressLoading && (
+                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-navy-200 border-t-navy-500" />
+                  </div>
+                )}
+              </div>
+              {showSuggestions && addressSuggestions.length > 0 && (
+                <ul
+                  className="absolute z-20 mt-1 w-full rounded-lg border border-navy-200 bg-white py-1 shadow-lg"
+                  role="listbox"
+                  aria-label="Address suggestions"
+                >
+                  {addressSuggestions.map((s, i) => (
+                    <li
+                      key={s.placeId || i}
+                      role="option"
+                      aria-selected={i === highlightedIndex}
+                      className={`cursor-pointer px-3 py-2 text-sm text-navy-800 transition ${
+                        i === highlightedIndex
+                          ? "bg-navy-100"
+                          : "hover:bg-navy-50"
+                      }`}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => selectSuggestion(s)}
+                    >
+                      <span className="font-medium">{s.main}</span>
+                      {s.secondary && (
+                        <span className="ml-1 text-xs text-navy-400">
+                          {s.secondary}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {addressQuery && !address && (
+                <p className="mt-1 text-xs text-amber-600">
+                  Please select an address from the suggestions.
+                </p>
+              )}
+              {address && (
+                <p className="mt-1 text-xs text-emerald-600">
+                  &#10003; {address}
+                </p>
+              )}
             </div>
             <div>
               <label

@@ -53,7 +53,7 @@ Public-facing informational page that tells the story and funnels visitors to ta
 - [ ] Footer:
   - Links to archrica.org, petition, legal filings
   - "No data is collected — your privacy is protected"
-  - RI Civica 501(c)(3) attribution
+  - RI Civica attribution
 
 ### Mailer App (Action Page — `/action` or section on landing page)
 - [ ] Resident input form:

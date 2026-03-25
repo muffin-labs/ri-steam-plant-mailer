@@ -214,21 +214,25 @@ export default function HomePage() {
                 name="Powerhouse Arts, Brooklyn"
                 detail="1904 power station"
                 result="170,000 SF arts facility"
+                url="https://www.powerhousearts.org/"
               />
               <PrecedentCard
                 name="Domino Sugar Refinery, Brooklyn"
                 detail="Factory"
                 result="460,000 SF net-zero office"
+                url="https://www.therefineryatdomino.com/"
               />
               <PrecedentCard
                 name="South Street Power Station, Providence"
                 detail="1912, vacant 20 years"
                 result="$220M academic center"
+                url="https://www.wsp.com/en-us/projects/south-street-landing"
               />
               <PrecedentCard
                 name="Pratt Street Power Plant, Baltimore"
                 detail="Power plant"
                 result="Mixed-use retail & entertainment"
+                url="https://powerplantlive.com/"
               />
             </div>
           </div>
@@ -290,13 +294,20 @@ export default function HomePage() {
                   rel="noopener noreferrer"
                   className="font-medium text-navy-700 underline underline-offset-2 hover:text-navy-900"
                 >
-                  RI Civica 501(c)(3)
+                  RI Civica
                 </a>
               </p>
               <p>No data is collected. Your privacy is protected.</p>
               <p>
                 Built with purpose by{" "}
-                <span className="font-medium text-gray-700">Muffin Labs</span>
+                <a
+                  href="https://muffinlabs.ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-navy-700 underline underline-offset-2 hover:text-navy-900"
+                >
+                  Muffin Labs
+                </a>
               </p>
             </div>
           </div>
@@ -367,9 +378,14 @@ function AskItem({ number, children }) {
   );
 }
 
-function PrecedentCard({ name, detail, result }) {
+function PrecedentCard({ name, detail, result, url }) {
   return (
-    <div className="rounded-lg border border-navy-200 bg-white p-6 shadow-sm">
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block rounded-lg border border-navy-200 bg-white p-6 shadow-sm transition hover:border-amber-300 hover:shadow-md"
+    >
       <h3 className="text-lg font-bold text-navy-900">{name}</h3>
       <p className="mt-1 text-sm text-gray-500">{detail}</p>
       <p className="mt-3 flex items-center gap-2 text-base font-semibold text-navy-700">
@@ -378,6 +394,6 @@ function PrecedentCard({ name, detail, result }) {
         </span>
         {result}
       </p>
-    </div>
+    </a>
   );
 }
