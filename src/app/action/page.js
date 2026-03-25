@@ -89,10 +89,17 @@ export default function ActionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [address, setAddress] = useState(""); // confirmed address from API
-  const [addressQuery, setAddressQuery] = useState(""); // what user types
+  // Restore saved user info from localStorage
+  function getSaved(key) {
+    if (typeof window === "undefined") return "";
+    try { return localStorage.getItem(`ri_mailer_${key}`) || ""; } catch { return ""; }
+  }
+
+  const [firstName, setFirstName] = useState(() => getSaved("firstName"));
+  const [lastName, setLastName] = useState(() => getSaved("lastName"));
+  const [address, setAddress] = useState(() => getSaved("address"));
+  const [addressQuery, setAddressQuery] = useState(() => getSaved("address"));
+  const [apt, setApt] = useState(() => getSaved("apt"));
 
   const [selectedCampaignId, setSelectedCampaignId] = useState(null);
   const [selectedRecipientIds, setSelectedRecipientIds] = useState(new Set());
@@ -103,8 +110,28 @@ export default function ActionPage() {
   const addressRef = useRef(null);
   const debounceRef = useRef(null);
 
-  const [email, setEmail] = useState("");
-  const [emailProvider, setEmailProvider] = useState(null); // "gmail" | "outlook" | "yahoo" | "other" | null
+  const [email, setEmail] = useState(() => getSaved("email"));
+
+  // Persist user info to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem("ri_mailer_firstName", firstName);
+      localStorage.setItem("ri_mailer_lastName", lastName);
+      localStorage.setItem("ri_mailer_address", address);
+      localStorage.setItem("ri_mailer_apt", apt);
+      localStorage.setItem("ri_mailer_email", email);
+    } catch { /* storage full or unavailable */ }
+  }, [firstName, lastName, address, apt, email]);
+  const [emailProvider, setEmailProvider] = useState(() => {
+    const saved = getSaved("email");
+    if (!saved) return null;
+    const domain = (saved.split("@")[1] || "").toLowerCase();
+    if (domain === "gmail.com" || domain === "googlemail.com") return "gmail";
+    if (["outlook.com", "hotmail.com", "live.com", "msn.com"].includes(domain)) return "outlook";
+    if (["yahoo.com", "ymail.com", "yahoo.co.uk"].includes(domain)) return "yahoo";
+    if (domain) return "other";
+    return null;
+  });
   const [sendStatus, setSendStatus] = useState(null); // "sent" | "copied" | "copied-form" | null
   const [copyError, setCopyError] = useState(null);
 
@@ -274,6 +301,9 @@ export default function ActionPage() {
   }
 
   const isFormValid = firstName.trim() && lastName.trim() && address.trim();
+  const fullAddress = apt.trim()
+    ? `${address.trim()}, ${apt.trim()}`
+    : address.trim();
 
   const renderedBody = useMemo(() => {
     if (!selectedCampaign) return "";
@@ -288,10 +318,10 @@ export default function ActionPage() {
     );
     text = text.replace(
       /\{\{address\}\}/g,
-      address.trim() || "[Your Address]"
+      fullAddress || "[Your Address]"
     );
     return text;
-  }, [selectedCampaign, firstName, lastName, address]);
+  }, [selectedCampaign, firstName, lastName, fullAddress]);
 
   const charCount = renderedBody.length;
   const isOverLimit = charCount > 1500;
@@ -305,10 +335,25 @@ export default function ActionPage() {
     return null;
   }
 
+  const [emailError, setEmailError] = useState("");
+
+  function isValidEmail(addr) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(addr);
+  }
+
   function handleEmailChange(value) {
     setEmail(value);
+    if (emailError && isValidEmail(value)) setEmailError("");
     const detected = detectProvider(value);
     if (detected) setEmailProvider(detected);
+  }
+
+  function handleEmailBlur() {
+    if (email && !isValidEmail(email)) {
+      setEmailError("Please enter a valid email address.");
+    } else {
+      setEmailError("");
+    }
   }
 
   function buildComposeUrl(provider) {
@@ -444,35 +489,45 @@ export default function ActionPage() {
                 className="w-full rounded-lg border border-navy-200 bg-white px-3 py-2.5 text-navy-900 placeholder:text-navy-300 transition focus:border-navy-400 focus:ring-2 focus:ring-amber-500/30 focus-visible:outline-none"
               />
             </div>
-            <div className="relative">
+            <div className="relative sm:col-span-2">
               <label
                 htmlFor="address"
                 className="mb-1 block text-sm font-medium text-navy-800"
               >
                 Street Address <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    ref={addressRef}
+                    id="address"
+                    type="text"
+                    required
+                    autoComplete="off"
+                    value={addressQuery}
+                    onChange={(e) => handleAddressChange(e.target.value)}
+                    onKeyDown={handleAddressKeyDown}
+                    onBlur={handleAddressBlur}
+                    onFocus={() => {
+                      if (addressSuggestions.length > 0) setShowSuggestions(true);
+                    }}
+                    placeholder="Start typing your address..."
+                    className="w-full rounded-lg border border-navy-200 bg-white px-3 py-2.5 text-navy-900 placeholder:text-navy-300 transition focus:border-navy-400 focus:ring-2 focus:ring-amber-500/30 focus-visible:outline-none"
+                  />
+                  {addressLoading && (
+                    <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-navy-200 border-t-navy-500" />
+                    </div>
+                  )}
+                </div>
                 <input
-                  ref={addressRef}
-                  id="address"
+                  id="apt"
                   type="text"
-                  required
-                  autoComplete="off"
-                  value={addressQuery}
-                  onChange={(e) => handleAddressChange(e.target.value)}
-                  onKeyDown={handleAddressKeyDown}
-                  onBlur={handleAddressBlur}
-                  onFocus={() => {
-                    if (addressSuggestions.length > 0) setShowSuggestions(true);
-                  }}
-                  placeholder="Start typing your address..."
-                  className="w-full rounded-lg border border-navy-200 bg-white px-3 py-2.5 text-navy-900 placeholder:text-navy-300 transition focus:border-navy-400 focus:ring-2 focus:ring-amber-500/30 focus-visible:outline-none"
+                  value={apt}
+                  onChange={(e) => setApt(e.target.value)}
+                  placeholder="Apt, Suite, etc."
+                  className="w-32 rounded-lg border border-navy-200 bg-white px-3 py-2.5 text-navy-900 placeholder:text-navy-300 transition focus:border-navy-400 focus:ring-2 focus:ring-amber-500/30 focus-visible:outline-none"
                 />
-                {addressLoading && (
-                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-navy-200 border-t-navy-500" />
-                  </div>
-                )}
               </div>
               {showSuggestions && addressSuggestions.length > 0 && (
                 <ul
@@ -510,7 +565,7 @@ export default function ActionPage() {
               )}
               {address && (
                 <p className="mt-1 text-xs text-emerald-600">
-                  &#10003; {address}
+                  &#10003; {fullAddress}
                 </p>
               )}
             </div>
@@ -527,10 +582,18 @@ export default function ActionPage() {
                 type="email"
                 value={email}
                 onChange={(e) => handleEmailChange(e.target.value)}
+                onBlur={handleEmailBlur}
                 placeholder="jane.doe@gmail.com"
-                className="w-full rounded-lg border border-navy-200 bg-white px-3 py-2.5 text-navy-900 placeholder:text-navy-300 transition focus:border-navy-400 focus:ring-2 focus:ring-amber-500/30 focus-visible:outline-none"
+                className={`w-full rounded-lg border bg-white px-3 py-2.5 text-navy-900 placeholder:text-navy-300 transition focus:ring-2 focus-visible:outline-none ${
+                  emailError
+                    ? "border-red-400 focus:border-red-400 focus:ring-red-500/30"
+                    : "border-navy-200 focus:border-navy-400 focus:ring-amber-500/30"
+                }`}
               />
-              {emailProvider && emailProvider !== "other" && (
+              {emailError && (
+                <p className="mt-1 text-xs text-red-600">{emailError}</p>
+              )}
+              {!emailError && emailProvider && emailProvider !== "other" && (
                 <p className="mt-1 text-xs text-emerald-600">
                   {emailProvider === "gmail" && "We'll open Gmail for you"}
                   {emailProvider === "outlook" && "We'll open Outlook for you"}
