@@ -70,7 +70,7 @@ export async function POST(request) {
         description || null,
         type || "email",
         subject || null,
-        body_template || null,
+        body_template || "",
         form_url || null,
         sort_order ?? 0,
         is_active ?? 1,
