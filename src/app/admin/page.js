@@ -276,7 +276,7 @@ function RecipientsPanel({ campaign, recipients, onUpdate, toast }) {
       });
       if (!res.ok) throw new Error("Save failed");
       const data = await res.json();
-      onUpdate("update-recipient", data);
+      onUpdate("update-recipient", data.recipient || data);
       toast("Recipient saved", "success");
     } catch {
       toast("Failed to save recipient", "error");
@@ -295,7 +295,7 @@ function RecipientsPanel({ campaign, recipients, onUpdate, toast }) {
       });
       if (!res.ok) throw new Error("Add failed");
       const data = await res.json();
-      onUpdate("add-recipient", data);
+      onUpdate("add-recipient", data.recipient || data);
       toast("Recipient added", "success");
     } catch {
       toast("Failed to add recipient", "error");
@@ -393,7 +393,7 @@ function CampaignCard({ campaign, recipients, onUpdate, toast }) {
       });
       if (!res.ok) throw new Error("Save failed");
       const data = await res.json();
-      onUpdate("update-campaign", data);
+      onUpdate("update-campaign", data.campaign || data);
       toast("Campaign saved", "success");
     } catch {
       toast("Failed to save campaign", "error");
@@ -432,7 +432,7 @@ function CampaignCard({ campaign, recipients, onUpdate, toast }) {
       });
       if (!res.ok) throw new Error("Save failed");
       const data = await res.json();
-      onUpdate("update-campaign", data);
+      onUpdate("update-campaign", data.campaign || data);
     } catch {
       setDraft(draft);
       toast("Failed to toggle active state", "error");
@@ -739,7 +739,7 @@ export default function AdminDashboardPage() {
       });
       if (!res.ok) throw new Error("Create failed");
       const data = await res.json();
-      handleUpdate("add-campaign", data);
+      handleUpdate("add-campaign", data.campaign || data);
       showToast("Campaign created", "success");
     } catch {
       showToast("Failed to create campaign", "error");
