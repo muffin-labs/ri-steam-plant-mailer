@@ -356,6 +356,11 @@ export default function ActionPage() {
     }
   }
 
+  function isMobile() {
+    if (typeof navigator === "undefined") return false;
+    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  }
+
   function buildComposeUrl(provider) {
     const recipients = selectedCampaign.recipients.filter((r) =>
       selectedRecipientIds.has(r.id)
@@ -365,6 +370,10 @@ export default function ActionPage() {
     const to = recipients.map((r) => r.email).join(",");
     const subject = selectedCampaign.subject || "";
     const body = renderedBody;
+    const mailto = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    // On mobile, mailto: is the most reliable way to open any email app with pre-filled content
+    if (isMobile()) return mailto;
 
     switch (provider) {
       case "gmail":
@@ -374,7 +383,7 @@ export default function ActionPage() {
       case "yahoo":
         return `https://compose.mail.yahoo.com/?to=${encodeURIComponent(to)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       default:
-        return `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        return mailto;
     }
   }
 
@@ -383,7 +392,7 @@ export default function ActionPage() {
     const p = provider || emailProvider || "other";
     const url = buildComposeUrl(p);
     if (!url) return;
-    if (p === "other") {
+    if (isMobile() || p === "other") {
       window.location.href = url;
     } else {
       window.open(url, "_blank", "noopener");
