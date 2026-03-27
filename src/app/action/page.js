@@ -72,7 +72,7 @@ function ErrorMessage({ message, onRetry }) {
 function CampaignTypeBadge({ type }) {
   if (type === "clipboard") {
     return (
-      <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 ring-inset">
+      <span className="inline-flex items-center whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 ring-inset">
         Web Form
       </span>
     );
@@ -629,13 +629,26 @@ export default function ActionPage() {
 
           {!loading && !error && campaigns.length > 0 && (
             <>
-              {/* Campaign selector cards */}
-              <div
-                className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2"
-                role="radiogroup"
-                aria-label="Campaign options"
-              >
-                {campaigns.map((campaign) => {
+              {/* Campaign selector cards grouped by priority */}
+              {(() => {
+                const emailCampaigns = campaigns.filter((c) => c.type === "mailto");
+                const formCampaigns = campaigns.filter((c) => c.type !== "mailto");
+                const groups = [];
+                if (emailCampaigns.length > 0)
+                  groups.push({ label: "High Priority — Email Campaigns", campaigns: emailCampaigns });
+                if (formCampaigns.length > 0)
+                  groups.push({ label: "Additional Actions — Web Forms", campaigns: formCampaigns });
+                return groups.map((group) => (
+                  <div key={group.label} className="mb-6">
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-navy-400">
+                      {group.label}
+                    </h3>
+                    <div
+                      className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+                      role="radiogroup"
+                      aria-label={group.label}
+                    >
+                      {group.campaigns.map((campaign) => {
                   const isSelected = campaign.id === selectedCampaignId;
                   return (
                     <button
@@ -656,18 +669,46 @@ export default function ActionPage() {
                         <CampaignTypeBadge type={campaign.type} />
                       </div>
                       {campaign.description && (
-                        <p
-                          className={`text-sm leading-relaxed ${
+                        <div
+                          className={`mt-2 text-sm leading-relaxed ${
                             isSelected ? "text-navy-200" : "text-navy-500"
                           }`}
                         >
-                          {campaign.description.replace(/\[img:[^\]]+\]/g, "").replace(/\n+/g, " ").trim()}
-                        </p>
+                          {campaign.description
+                            .replace(/\[img:[^\]]+\]/g, "")
+                            .trim()
+                            .split(/\n+/)
+                            .map((line, j) => {
+                              const trimmed = line.trim();
+                              if (!trimmed) return null;
+                              const isStep = /^Step \d/i.test(trimmed);
+                              return (
+                                <p
+                                  key={j}
+                                  className={isStep ? "mt-1.5 first:mt-0" : "ml-4"}
+                                >
+                                  {isStep ? (
+                                    <>
+                                      <span className={`font-semibold ${isSelected ? "text-amber-300" : "text-navy-700"}`}>
+                                        {trimmed.match(/^Step \d+:/)?.[0]}
+                                      </span>
+                                      {trimmed.replace(/^Step \d+:/, "")}
+                                    </>
+                                  ) : (
+                                    trimmed
+                                  )}
+                                </p>
+                              );
+                            })}
+                        </div>
                       )}
                     </button>
                   );
                 })}
-              </div>
+                    </div>
+                  </div>
+                ));
+              })()}
 
               {/* Selected campaign detail */}
               {selectedCampaign && (

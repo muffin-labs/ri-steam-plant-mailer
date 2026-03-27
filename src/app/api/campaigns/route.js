@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const db = getDb();
     const campaignRows = await db.execute(
-      "SELECT * FROM campaigns WHERE is_active = 1 ORDER BY sort_order, id"
+      "SELECT * FROM campaigns WHERE is_active = 1 ORDER BY CASE type WHEN 'mailto' THEN 0 ELSE 1 END, sort_order, id"
     );
 
     const campaigns = [];

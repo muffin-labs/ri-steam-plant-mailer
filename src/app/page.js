@@ -11,8 +11,15 @@ export default function HomePage() {
 
       <main id="main">
         {/* ── Hero ── */}
-        <section className="bg-navy-900 pb-16 pt-12 text-white sm:pb-24 sm:pt-20">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <section className="relative bg-navy-900 pb-16 pt-12 text-white sm:pb-24 sm:pt-20 overflow-hidden">
+          <img
+            src="/hero-steam-plant.jpg"
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-navy-900/75" aria-hidden="true" />
+          <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
             <h1 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
               Save the Roosevelt Island
               <br />
