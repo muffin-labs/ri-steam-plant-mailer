@@ -811,39 +811,57 @@ export default function ActionPage() {
                         <h3 className="mb-3 text-sm font-semibold text-navy-700">
                           Send With
                         </h3>
-                        <div className="flex flex-wrap gap-2">
-                          {[
-                            { id: "gmail", label: "Gmail", color: "bg-red-500 hover:bg-red-600" },
-                            { id: "outlook", label: "Outlook", color: "bg-blue-500 hover:bg-blue-600" },
-                            { id: "yahoo", label: "Yahoo Mail", color: "bg-purple-500 hover:bg-purple-600" },
-                            { id: "other", label: "Other / Default App", color: "bg-navy-600 hover:bg-navy-700" },
-                          ].map(({ id, label, color }) => (
-                            <button
-                              key={id}
-                              onClick={() => handleSendEmail(id)}
-                              disabled={
-                                !isFormValid || selectedRecipients.length === 0
-                              }
-                              className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold text-white shadow-md transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 disabled:cursor-not-allowed disabled:opacity-50 ${color} ${
-                                emailProvider === id
-                                  ? "ring-2 ring-amber-400 ring-offset-2"
-                                  : ""
-                              }`}
-                            >
-                              {label}
-                              {emailProvider === id && (
-                                <span className="text-xs font-normal opacity-80">
-                                  (detected)
-                                </span>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                        {!email && (
+                        {/* Mobile: single send button using mailto: */}
+                        <div className="sm:hidden">
+                          <button
+                            onClick={() => handleSendEmail("other")}
+                            disabled={
+                              !isFormValid || selectedRecipients.length === 0
+                            }
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-6 py-4 text-base font-bold text-navy-950 shadow-md transition hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Open Email App
+                          </button>
                           <p className="mt-2 text-xs text-navy-400">
-                            Enter your email above to auto-detect your provider, or just pick one.
+                            Opens your default email app with the letter ready to send.
                           </p>
-                        )}
+                        </div>
+                        {/* Desktop: provider buttons */}
+                        <div className="hidden sm:block">
+                          <div className="flex flex-wrap gap-2">
+                            {[
+                              { id: "gmail", label: "Gmail", color: "bg-red-500 hover:bg-red-600" },
+                              { id: "outlook", label: "Outlook", color: "bg-blue-500 hover:bg-blue-600" },
+                              { id: "yahoo", label: "Yahoo Mail", color: "bg-purple-500 hover:bg-purple-600" },
+                              { id: "other", label: "Other / Default App", color: "bg-navy-600 hover:bg-navy-700" },
+                            ].map(({ id, label, color }) => (
+                              <button
+                                key={id}
+                                onClick={() => handleSendEmail(id)}
+                                disabled={
+                                  !isFormValid || selectedRecipients.length === 0
+                                }
+                                className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold text-white shadow-md transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 disabled:cursor-not-allowed disabled:opacity-50 ${color} ${
+                                  emailProvider === id
+                                    ? "ring-2 ring-amber-400 ring-offset-2"
+                                    : ""
+                                }`}
+                              >
+                                {label}
+                                {emailProvider === id && (
+                                  <span className="text-xs font-normal opacity-80">
+                                    (detected)
+                                  </span>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                          {!email && (
+                            <p className="mt-2 text-xs text-navy-400">
+                              Enter your email above to auto-detect your provider, or just pick one.
+                            </p>
+                          )}
+                        </div>
                       </div>
 
                       {/* Copy fallback */}
