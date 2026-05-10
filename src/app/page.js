@@ -1,6 +1,42 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+
+const MERGE_TAG_RE = /(\{\{first_name\}\}|\{\{last_name\}\}|\{\{address\}\})/;
+const MERGE_LABELS = {
+  "{{first_name}}": "First Name",
+  "{{last_name}}": "Last Name",
+  "{{address}}": "Your Address",
+};
+
+function PreviewBody({ template, firstName, lastName, address }) {
+  const parts = template.split(MERGE_TAG_RE);
+  const values = {
+    "{{first_name}}": firstName,
+    "{{last_name}}": lastName,
+    "{{address}}": address,
+  };
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part in values) {
+          return values[part] ? (
+            <span key={i}>{values[part]}</span>
+          ) : (
+            <mark
+              key={i}
+              className="rounded bg-amber-200 px-0.5 text-amber-800 not-italic"
+            >
+              {MERGE_LABELS[part]}
+            </mark>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
+}
+
 // Renders description text with [img:/path.png] tags as images
 function RichDescription({ text, className }) {
   if (!text) return null;
@@ -89,17 +125,24 @@ export default function ActionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Restore saved user info from localStorage
-  function getSaved(key) {
-    if (typeof window === "undefined") return "";
-    try { return localStorage.getItem(`ri_mailer_${key}`) || ""; } catch { return ""; }
-  }
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [address, setAddress] = useState("");
+  const [addressQuery, setAddressQuery] = useState("");
+  const [apt, setApt] = useState("");
 
-  const [firstName, setFirstName] = useState(() => getSaved("firstName"));
-  const [lastName, setLastName] = useState(() => getSaved("lastName"));
-  const [address, setAddress] = useState(() => getSaved("address"));
-  const [addressQuery, setAddressQuery] = useState(() => getSaved("address"));
-  const [apt, setApt] = useState(() => getSaved("apt"));
+  // Restore saved user info from localStorage after mount to avoid hydration mismatch
+  useEffect(() => {
+    try {
+      const saved = (key) => localStorage.getItem(`ri_mailer_${key}`) || "";
+      const savedAddress = saved("address");
+      setFirstName(saved("firstName"));
+      setLastName(saved("lastName"));
+      setAddress(savedAddress);
+      setAddressQuery(savedAddress);
+      setApt(saved("apt"));
+    } catch { /* storage unavailable */ }
+  }, []);
 
   const [selectedCampaignId, setSelectedCampaignId] = useState(null);
   const [selectedRecipientIds, setSelectedRecipientIds] = useState(new Set());
@@ -311,7 +354,6 @@ export default function ActionPage() {
   }, [selectedCampaign, firstName, lastName, fullAddress]);
 
   const charCount = renderedBody.length;
-  const isOverLimit = charCount > 1500;
 
   function isMobile() {
     if (typeof navigator === "undefined") return false;
@@ -344,6 +386,14 @@ export default function ActionPage() {
     }
   }
 
+  function recordSend(campaignId) {
+    fetch("/api/sends", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ campaign_id: campaignId }),
+    }).catch(() => {});
+  }
+
   function handleSendEmail(provider) {
     if (!selectedCampaign || !isFormValid) return;
     const p = provider || "other";
@@ -354,6 +404,7 @@ export default function ActionPage() {
     } else {
       window.open(url, "_blank", "noopener");
     }
+    recordSend(selectedCampaign.id);
     setSendStatus("sent");
   }
 
@@ -361,6 +412,7 @@ export default function ActionPage() {
     try {
       await navigator.clipboard.writeText(renderedBody);
       setCopyError(null);
+      recordSend(selectedCampaign.id);
       setSendStatus("copied");
     } catch {
       setCopyError("Could not copy automatically. Please select the text above and copy it manually.");
@@ -375,6 +427,7 @@ export default function ActionPage() {
       if (selectedCampaign.form_url) {
         window.open(selectedCampaign.form_url, "_blank", "noopener");
       }
+      recordSend(selectedCampaign.id);
       setSendStatus("copied-form");
     } catch {
       setCopyError("Could not copy automatically. Please select the text above and copy it manually.");
@@ -399,7 +452,7 @@ export default function ActionPage() {
             Roosevelt Island Residents
           </p>
           <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Save the Steam Plant
+            Stop the Demolition
           </h1>
           <p className="mt-3 max-w-xl text-base leading-relaxed text-navy-300">
             The City is rushing to demolish an 87-year-old landmark without following the law.
@@ -704,13 +757,8 @@ export default function ActionPage() {
                           <h3 className="text-sm font-semibold text-navy-700">
                             Letter Preview
                           </h3>
-                          <span
-                            className={`text-xs font-medium ${
-                              isOverLimit ? "text-red-600" : "text-navy-400"
-                            }`}
-                          >
+                          <span className="text-xs font-medium text-navy-400">
                             {charCount.toLocaleString()} characters
-                            {isOverLimit && " (long emails may be truncated)"}
                           </span>
                         </div>
                         <div className="rounded-xl border border-navy-200 bg-amber-50/40 p-4 sm:p-6">
@@ -723,7 +771,12 @@ export default function ActionPage() {
                             className="whitespace-pre-wrap font-serif text-sm leading-relaxed text-navy-800"
                             aria-label="Letter body preview"
                           >
-                            {renderedBody}
+                            <PreviewBody
+                              template={selectedCampaign.body_template || ""}
+                              firstName={firstName.trim()}
+                              lastName={lastName.trim()}
+                              address={fullAddress}
+                            />
                           </div>
                         </div>
                       </div>
@@ -851,7 +904,12 @@ export default function ActionPage() {
                             className="whitespace-pre-wrap font-serif text-sm leading-relaxed text-navy-800"
                             aria-label="Text preview"
                           >
-                            {renderedBody}
+                            <PreviewBody
+                              template={selectedCampaign.body_template || ""}
+                              firstName={firstName.trim()}
+                              lastName={lastName.trim()}
+                              address={fullAddress}
+                            />
                           </div>
                         </div>
                       </div>

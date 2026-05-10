@@ -49,6 +49,15 @@ async function migrate() {
     `);
     console.log("Created table: admin_config");
 
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS sends (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+        sent_at     TEXT DEFAULT (datetime('now'))
+      )
+    `);
+    console.log("Created table: sends");
+
     console.log("All migrations completed successfully.");
   } catch (err) {
     console.error("Migration failed:", err.message);

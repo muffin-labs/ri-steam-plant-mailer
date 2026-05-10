@@ -365,10 +365,13 @@ function RecipientsPanel({ campaign, recipients, onUpdate, toast }) {
 // ---------------------------------------------------------------------------
 // Campaign card (expandable)
 // ---------------------------------------------------------------------------
-function CampaignCard({ campaign, recipients, onUpdate, toast }) {
+function CampaignCard({ campaign, recipients, onUpdate, toast, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd }) {
   const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState({ ...campaign });
   const [saving, setSaving] = useState(false);
+  const [activateError, setActivateError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [mergeWarnings, setMergeWarnings] = useState([]);
   const bodyRef = useRef(null);
 
   // Sync draft if campaign prop changes externally
@@ -379,8 +382,21 @@ function CampaignCard({ campaign, recipients, onUpdate, toast }) {
     });
   }, [campaign]);
 
+  // Clear activate error once recipients exist
+  useEffect(() => {
+    if (activateError && recipients.filter((r) => r.campaign_id === campaign.id).length > 0) {
+      setActivateError(null);
+    }
+  }, [recipients, campaign.id, activateError]);
+
   function handleChange(field, value) {
     setDraft((prev) => ({ ...prev, [field]: value }));
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: false }));
+    }
+    if (field === "body_template") {
+      setMergeWarnings([]);
+    }
   }
 
   async function handleSave() {
@@ -422,6 +438,31 @@ function CampaignCard({ campaign, recipients, onUpdate, toast }) {
   }
 
   async function handleToggleActive() {
+    const activating = !draft.is_active;
+    if (activating) {
+      const campaignRecipients = recipients.filter((r) => r.campaign_id === campaign.id);
+      const errors = {
+        name: !draft.name?.trim(),
+        subject: draft.type === "mailto" && !draft.subject?.trim(),
+        body_template: !draft.body_template?.trim(),
+        recipients: draft.type === "mailto" && campaignRecipients.length === 0,
+      };
+      const hasErrors = Object.values(errors).some(Boolean);
+      if (hasErrors) {
+        setFieldErrors(errors);
+        setActivateError(errors.recipients ? "Add at least one recipient before activating this campaign." : null);
+        setExpanded(true);
+        return;
+      }
+    }
+    setFieldErrors({});
+    setActivateError(null);
+    const missing = [
+      ["{{first_name}}", "First Name"],
+      ["{{last_name}}", "Last Name"],
+      ["{{address}}", "Address"],
+    ].filter(([tag]) => !(draft.body_template || "").includes(tag)).map(([, label]) => label);
+    setMergeWarnings(missing);
     const updated = { ...draft, is_active: draft.is_active ? 0 : 1 };
     setDraft(updated);
     try {
@@ -440,12 +481,37 @@ function CampaignCard({ campaign, recipients, onUpdate, toast }) {
   }
 
   const charCount = (draft.body_template || "").length;
-  const charOverLimit = draft.type === "mailto" && charCount > 1500;
+  const inputCls = (field) =>
+    `w-full rounded-md border px-3 py-2 text-sm text-navy-900 focus:outline-none focus:ring-2 ${
+      fieldErrors[field]
+        ? "border-red-400 bg-red-50 focus:border-red-500 focus:ring-red-500/30"
+        : "border-navy-300 focus:border-amber-500 focus:ring-amber-500/30"
+    }`;
 
   return (
-    <div className="rounded-lg border border-navy-200 bg-white shadow-sm">
+    <div
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+      className={`rounded-lg border bg-white shadow-sm transition-opacity ${
+        isDragging ? "opacity-40" : "opacity-100"
+      } ${isDragOver ? "border-amber-400 border-2" : "border-navy-200"}`}
+    >
       {/* Collapsed header */}
       <div className="flex items-center gap-3 px-5 py-4">
+        {/* Drag handle */}
+        <div
+          className="cursor-grab shrink-0 text-navy-300 hover:text-navy-500 active:cursor-grabbing"
+          aria-hidden="true"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+            <circle cx="4" cy="2" r="1.5" /><circle cx="10" cy="2" r="1.5" />
+            <circle cx="4" cy="7" r="1.5" /><circle cx="10" cy="7" r="1.5" />
+            <circle cx="4" cy="12" r="1.5" /><circle cx="10" cy="12" r="1.5" />
+          </svg>
+        </div>
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
@@ -509,22 +575,8 @@ function CampaignCard({ campaign, recipients, onUpdate, toast }) {
                 type="text"
                 value={draft.name || ""}
                 onChange={(e) => handleChange("name", e.target.value)}
-                className="w-full rounded-md border border-navy-300 px-3 py-2 text-sm text-navy-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 focus:outline-none"
+                className={inputCls("name")}
               />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-navy-600">
-                Type
-              </label>
-              <select
-                value={draft.type || "mailto"}
-                onChange={(e) => handleChange("type", e.target.value)}
-                className="w-full rounded-md border border-navy-300 px-3 py-2 text-sm text-navy-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 focus:outline-none bg-white"
-              >
-                <option value="mailto">mailto</option>
-                <option value="clipboard">clipboard</option>
-              </select>
             </div>
 
             <div className="sm:col-span-2">
@@ -539,6 +591,21 @@ function CampaignCard({ campaign, recipients, onUpdate, toast }) {
               />
             </div>
 
+            {/* Recipients — shown here so it's above Subject Line */}
+            {draft.type === "mailto" && (
+              <div className={`sm:col-span-2 rounded-lg ${activateError ? "border border-red-300 bg-red-50 p-3" : ""}`}>
+                {activateError && (
+                  <p className="mb-2 text-xs font-semibold text-red-600">{activateError}</p>
+                )}
+                <RecipientsPanel
+                  campaign={campaign}
+                  recipients={recipients}
+                  onUpdate={onUpdate}
+                  toast={toast}
+                />
+              </div>
+            )}
+
             {draft.type === "mailto" && (
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-xs font-semibold text-navy-600">
@@ -548,7 +615,7 @@ function CampaignCard({ campaign, recipients, onUpdate, toast }) {
                   type="text"
                   value={draft.subject || ""}
                   onChange={(e) => handleChange("subject", e.target.value)}
-                  className="w-full rounded-md border border-navy-300 px-3 py-2 text-sm text-navy-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 focus:outline-none"
+                  className={inputCls("subject")}
                 />
               </div>
             )}
@@ -578,29 +645,18 @@ function CampaignCard({ campaign, recipients, onUpdate, toast }) {
                 value={draft.body_template || ""}
                 onChange={(e) => handleChange("body_template", e.target.value)}
                 rows={8}
-                className="w-full rounded-md border border-navy-300 px-3 py-2 text-sm text-navy-900 font-mono focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 focus:outline-none resize-y"
+                className={`${inputCls("body_template")} font-mono resize-y`}
               />
-              <p
-                className={`mt-1 text-xs ${charOverLimit ? "text-red-600 font-semibold" : "text-navy-400"}`}
-              >
+              <p className="mt-1 text-xs text-navy-400">
                 {charCount} character{charCount !== 1 ? "s" : ""}
-                {draft.type === "mailto" && " / 1500 max for mailto"}
               </p>
+              {mergeWarnings.length > 0 && (
+                <p className="mt-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+                  ⚠ Template is missing: {mergeWarnings.join(", ")}. Residents&apos; info won&apos;t be personalized.
+                </p>
+              )}
             </div>
 
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-navy-600">
-                Sort Order
-              </label>
-              <input
-                type="number"
-                value={draft.sort_order ?? 0}
-                onChange={(e) =>
-                  handleChange("sort_order", parseInt(e.target.value, 10) || 0)
-                }
-                className="w-28 rounded-md border border-navy-300 px-3 py-2 text-sm text-navy-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 focus:outline-none"
-              />
-            </div>
           </div>
 
           {/* Action buttons */}
@@ -622,18 +678,241 @@ function CampaignCard({ campaign, recipients, onUpdate, toast }) {
               Delete
             </button>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
-          {/* Recipients section (only for mailto campaigns) */}
-          {draft.type === "mailto" && (
-            <RecipientsPanel
+// ---------------------------------------------------------------------------
+// SVG bar chart — no external dependency
+// ---------------------------------------------------------------------------
+function BarChart({ data }) {
+  const W = 600;
+  const H = 120;
+  const PADDING = { top: 8, right: 8, bottom: 24, left: 32 };
+  const chartW = W - PADDING.left - PADDING.right;
+  const chartH = H - PADDING.top - PADDING.bottom;
+
+  if (!data || data.length === 0) {
+    return <p className="text-sm text-navy-400 italic">No send data yet.</p>;
+  }
+
+  const maxCount = Math.max(...data.map((d) => d.count), 1);
+  const barW = Math.max(2, (chartW / data.length) - 2);
+
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-full"
+      aria-label="Sends per day bar chart"
+    >
+      {/* Y-axis labels */}
+      {[0, Math.round(maxCount / 2), maxCount].map((v) => {
+        const y = PADDING.top + chartH - (v / maxCount) * chartH;
+        return (
+          <g key={v}>
+            <line
+              x1={PADDING.left}
+              x2={W - PADDING.right}
+              y1={y}
+              y2={y}
+              stroke="#e2e8f0"
+              strokeWidth="1"
+            />
+            <text x={PADDING.left - 4} y={y + 4} textAnchor="end" fontSize="9" fill="#64748b">
+              {v}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Bars */}
+      {data.map((d, i) => {
+        const barH = (d.count / maxCount) * chartH;
+        const x = PADDING.left + i * (chartW / data.length);
+        const y = PADDING.top + chartH - barH;
+        const isFirst = i === 0;
+        const isLast = i === data.length - 1;
+        const label = isFirst || isLast ? d.date.slice(5) : "";
+        return (
+          <g key={d.date}>
+            <rect x={x} y={y} width={barW} height={barH} fill="#d97706" rx="1" />
+            {label && (
+              <text
+                x={x + barW / 2}
+                y={H - 4}
+                textAnchor="middle"
+                fontSize="9"
+                fill="#64748b"
+              >
+                {label}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Stats tab
+// ---------------------------------------------------------------------------
+function StatsTab() {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/admin/stats")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load");
+        return res.json();
+      })
+      .then(setStats)
+      .catch(() => setError("Failed to load statistics."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <p className="text-sm text-navy-500">Loading statistics...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return <p className="text-sm text-red-600">{error}</p>;
+  }
+
+  const sendsThisWeek = (stats.sends_by_day || [])
+    .filter((d) => {
+      const date = new Date(d.date);
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return date >= weekAgo;
+    })
+    .reduce((sum, d) => sum + d.count, 0);
+
+  return (
+    <div className="space-y-8">
+      {/* Overview cards */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        {[
+          { label: "Total Sends", value: stats.total_sends },
+          { label: "Sends This Week", value: sendsThisWeek },
+          {
+            label: "Active Campaigns",
+            value: (stats.by_campaign || []).length,
+          },
+        ].map(({ label, value }) => (
+          <div
+            key={label}
+            className="rounded-lg border border-navy-200 bg-white p-4 shadow-sm"
+          >
+            <p className="text-xs font-semibold uppercase tracking-widest text-navy-500">
+              {label}
+            </p>
+            <p className="mt-1 text-3xl font-bold text-navy-900">{value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Sends over time */}
+      <div className="rounded-lg border border-navy-200 bg-white p-5 shadow-sm">
+        <h2 className="mb-4 text-sm font-semibold text-navy-800">
+          Sends — Last 30 Days
+        </h2>
+        <BarChart data={stats.sends_by_day} />
+      </div>
+
+      {/* Campaign breakdown */}
+      <div className="rounded-lg border border-navy-200 bg-white shadow-sm">
+        <div className="border-b border-navy-200 px-5 py-3">
+          <h2 className="text-sm font-semibold text-navy-800">
+            By Campaign
+          </h2>
+        </div>
+        <table className="w-full text-left">
+          <thead>
+            <tr className="border-b border-navy-100 text-xs font-semibold uppercase tracking-wide text-navy-500">
+              <th className="px-5 py-2">Campaign</th>
+              <th className="px-5 py-2 text-right">Sends</th>
+              <th className="hidden px-5 py-2 sm:table-cell">Last Send</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(stats.by_campaign || []).map((row) => (
+              <tr
+                key={row.campaign_id}
+                className="border-b border-navy-100 last:border-b-0"
+              >
+                <td className="px-5 py-3 text-sm text-navy-900">
+                  {row.campaign_name}
+                </td>
+                <td className="px-5 py-3 text-right text-sm font-semibold text-navy-900">
+                  {row.total_sends}
+                </td>
+                <td className="hidden px-5 py-3 text-sm text-navy-500 sm:table-cell">
+                  {row.last_sent_at
+                    ? new Date(row.last_sent_at).toLocaleDateString()
+                    : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Campaign section with independent drag-and-drop
+// ---------------------------------------------------------------------------
+function CampaignSection({ title, type, campaigns, recipients, onUpdate, toast, onReorder, onAdd }) {
+  const [dragFrom, setDragFrom] = useState(null);
+  const [dragOver, setDragOver] = useState(null);
+
+  return (
+    <div>
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-widest text-navy-500">{title}</h2>
+      {campaigns.length === 0 ? (
+        <div className="mb-4 rounded-lg border border-dashed border-navy-200 py-8 text-center">
+          <p className="text-sm text-navy-400 italic">No campaigns yet.</p>
+        </div>
+      ) : (
+        <div className="mb-4 space-y-4">
+          {campaigns.map((campaign, index) => (
+            <CampaignCard
+              key={campaign.id}
               campaign={campaign}
               recipients={recipients}
               onUpdate={onUpdate}
               toast={toast}
+              isDragging={dragFrom === index}
+              isDragOver={dragOver === index}
+              onDragStart={() => setDragFrom(index)}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(index); }}
+              onDrop={() => {
+                onReorder(campaigns, dragFrom, index);
+                setDragFrom(null);
+                setDragOver(null);
+              }}
+              onDragEnd={() => { setDragFrom(null); setDragOver(null); }}
             />
-          )}
+          ))}
         </div>
       )}
+      <button
+        type="button"
+        onClick={() => onAdd(type)}
+        className="w-full rounded-md border border-dashed border-navy-300 py-2 text-sm font-medium text-navy-500 hover:border-amber-400 hover:text-amber-600 transition-colors"
+      >
+        + Add Campaign
+      </button>
     </div>
   );
 }
@@ -648,6 +927,7 @@ export default function AdminDashboardPage() {
   const [campaigns, setCampaigns] = useState([]);
   const [recipients, setRecipients] = useState([]);
   const [toastMsg, setToastMsg] = useState(null);
+  const [activeTab, setActiveTab] = useState("campaigns");
 
   const showToast = useCallback((message, type = "success") => {
     setToastMsg({ message, type, key: Date.now() });
@@ -722,19 +1002,19 @@ export default function AdminDashboardPage() {
     router.replace("/admin/login");
   }
 
-  async function handleNewCampaign() {
+  async function handleNewCampaign(type) {
     try {
       const res = await fetch("/api/admin/campaigns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: "New Campaign",
-          type: "mailto",
+          type,
           description: "",
           subject: "",
           body_template: "",
           is_active: 0,
-          sort_order: campaigns.length,
+          sort_order: campaigns.filter((c) => c.type === type).length,
         }),
       });
       if (!res.ok) throw new Error("Create failed");
@@ -744,6 +1024,24 @@ export default function AdminDashboardPage() {
     } catch {
       showToast("Failed to create campaign", "error");
     }
+  }
+
+  function handleReorder(subset, fromIndex, toIndex) {
+    if (fromIndex === toIndex) return;
+    const reordered = [...subset];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+    const updated = reordered.map((c, i) => ({ ...c, sort_order: i }));
+    setCampaigns((prev) =>
+      prev.map((c) => updated.find((u) => u.id === c.id) ?? c)
+    );
+    updated.forEach((c) => {
+      fetch("/api/admin/campaigns", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: c.id, sort_order: c.sort_order }),
+      }).catch(() => {});
+    });
   }
 
   if (!authed) {
@@ -768,42 +1066,64 @@ export default function AdminDashboardPage() {
         </button>
       </header>
 
-      {/* Toolbar */}
-      <div className="mb-6">
-        <button
-          type="button"
-          onClick={handleNewCampaign}
-          className="rounded-md bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 transition-colors"
-        >
-          + New Campaign
-        </button>
+      {/* Tab nav */}
+      <div className="mb-6 flex items-center gap-1 border-b border-navy-200">
+        {["campaigns", "statistics"].map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 text-sm font-medium capitalize transition-colors border-b-2 -mb-px ${
+              activeTab === tab
+                ? "border-amber-500 text-amber-600"
+                : "border-transparent text-navy-500 hover:text-navy-800"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
-      {/* Campaign list */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <p className="text-sm text-navy-500">Loading campaigns...</p>
-        </div>
-      ) : campaigns.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-navy-300 py-16 text-center">
-          <p className="text-navy-500">No campaigns yet. Create one to get started.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {campaigns
-            .slice()
-            .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-            .map((campaign) => (
-              <CampaignCard
-                key={campaign.id}
-                campaign={campaign}
-                recipients={recipients}
-                onUpdate={handleUpdate}
-                toast={showToast}
-              />
-            ))}
-        </div>
+      {activeTab === "campaigns" && (
+        <>
+          {/* Campaign sections */}
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <p className="text-sm text-navy-500">Loading campaigns...</p>
+            </div>
+          ) : (() => {
+            const sorted = campaigns.slice().sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+            const mailCampaigns = sorted.filter((c) => c.type === "mailto");
+            const webCampaigns = sorted.filter((c) => c.type === "clipboard");
+            return (
+              <div className="space-y-10">
+                <CampaignSection
+                  title="Email Campaigns"
+                  type="mailto"
+                  campaigns={mailCampaigns}
+                  recipients={recipients}
+                  onUpdate={handleUpdate}
+                  toast={showToast}
+                  onReorder={handleReorder}
+                  onAdd={handleNewCampaign}
+                />
+                <CampaignSection
+                  title="Web Form Campaigns"
+                  type="clipboard"
+                  campaigns={webCampaigns}
+                  recipients={recipients}
+                  onUpdate={handleUpdate}
+                  toast={showToast}
+                  onReorder={handleReorder}
+                  onAdd={handleNewCampaign}
+                />
+              </div>
+            );
+          })()}
+        </>
       )}
+
+      {activeTab === "statistics" && <StatsTab />}
 
       {/* Toast */}
       {toastMsg && (
