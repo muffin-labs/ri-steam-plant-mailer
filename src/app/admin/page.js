@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { MAILERS, DEFAULT_MAILER, getMailer } from "@/lib/mailers";
 
 // ---------------------------------------------------------------------------
 // Toast notification component
@@ -759,13 +760,16 @@ function BarChart({ data }) {
 // ---------------------------------------------------------------------------
 // Stats tab
 // ---------------------------------------------------------------------------
-function StatsTab() {
+function StatsTab({ mailer, onMailerChange }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch("/api/admin/stats")
+    setLoading(true);
+    setError(null);
+    const query = mailer ? `?mailer=${encodeURIComponent(mailer)}` : "";
+    fetch(`/api/admin/stats${query}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load");
         return res.json();
@@ -773,18 +777,34 @@ function StatsTab() {
       .then(setStats)
       .catch(() => setError("Failed to load statistics."))
       .finally(() => setLoading(false));
-  }, []);
+  }, [mailer]);
+
+  const switcher = (
+    <MailerSwitcher
+      options={[{ slug: null, name: "All Mailers" }, ...MAILERS]}
+      value={mailer}
+      onChange={onMailerChange}
+    />
+  );
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-sm text-navy-500">Loading statistics...</p>
-      </div>
+      <>
+        {switcher}
+        <div className="flex items-center justify-center py-20">
+          <p className="text-sm text-navy-500">Loading statistics...</p>
+        </div>
+      </>
     );
   }
 
   if (error) {
-    return <p className="text-sm text-red-600">{error}</p>;
+    return (
+      <>
+        {switcher}
+        <p className="text-sm text-red-600">{error}</p>
+      </>
+    );
   }
 
   const sendsThisWeek = (stats.sends_by_day || [])
@@ -798,6 +818,7 @@ function StatsTab() {
 
   return (
     <div className="space-y-8">
+      {switcher}
       {/* Overview cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         {[
@@ -805,7 +826,7 @@ function StatsTab() {
           { label: "Sends This Week", value: sendsThisWeek },
           {
             label: "Active Campaigns",
-            value: (stats.by_campaign || []).length,
+            value: (stats.by_campaign || []).filter((c) => c.is_active).length,
           },
         ].map(({ label, value }) => (
           <div
@@ -839,6 +860,7 @@ function StatsTab() {
           <thead>
             <tr className="border-b border-navy-100 text-xs font-semibold uppercase tracking-wide text-navy-500">
               <th className="px-5 py-2">Campaign</th>
+              <th className="hidden px-5 py-2 sm:table-cell">Mailer</th>
               <th className="px-5 py-2 text-right">Sends</th>
               <th className="hidden px-5 py-2 sm:table-cell">Last Send</th>
             </tr>
@@ -851,6 +873,9 @@ function StatsTab() {
               >
                 <td className="px-5 py-3 text-sm text-navy-900">
                   {row.campaign_name}
+                </td>
+                <td className="hidden px-5 py-3 text-sm text-navy-500 sm:table-cell">
+                  {getMailer(row.mailer)?.name ?? row.mailer}
                 </td>
                 <td className="px-5 py-3 text-right text-sm font-semibold text-navy-900">
                   {row.total_sends}
@@ -865,6 +890,33 @@ function StatsTab() {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Mailer switcher (pill tabs) shared by the Campaigns and Statistics tabs
+// ---------------------------------------------------------------------------
+function MailerSwitcher({ options, value, onChange, children }) {
+  return (
+    <div className="mb-6 flex flex-wrap items-center gap-2" role="tablist" aria-label="Mailer">
+      {options.map((m) => (
+        <button
+          key={m.slug ?? "all"}
+          type="button"
+          role="tab"
+          aria-selected={value === m.slug}
+          onClick={() => onChange(m.slug)}
+          className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+            value === m.slug
+              ? "bg-navy-900 text-white"
+              : "bg-white text-navy-600 ring-1 ring-navy-200 hover:bg-navy-50"
+          }`}
+        >
+          {m.name}
+        </button>
+      ))}
+      {children}
     </div>
   );
 }
@@ -928,6 +980,8 @@ export default function AdminDashboardPage() {
   const [recipients, setRecipients] = useState([]);
   const [toastMsg, setToastMsg] = useState(null);
   const [activeTab, setActiveTab] = useState("campaigns");
+  const [activeMailer, setActiveMailer] = useState(DEFAULT_MAILER);
+  const [statsMailer, setStatsMailer] = useState(null); // null = all mailers
 
   const showToast = useCallback((message, type = "success") => {
     setToastMsg({ message, type, key: Date.now() });
@@ -1010,11 +1064,14 @@ export default function AdminDashboardPage() {
         body: JSON.stringify({
           name: "New Campaign",
           type,
+          mailer: activeMailer,
           description: "",
           subject: "",
           body_template: "",
           is_active: 0,
-          sort_order: campaigns.filter((c) => c.type === type).length,
+          sort_order: campaigns.filter(
+            (c) => c.type === type && c.mailer === activeMailer
+          ).length,
         }),
       });
       if (!res.ok) throw new Error("Create failed");
@@ -1086,13 +1143,29 @@ export default function AdminDashboardPage() {
 
       {activeTab === "campaigns" && (
         <>
+          <MailerSwitcher
+            options={MAILERS}
+            value={activeMailer}
+            onChange={setActiveMailer}
+          >
+            <a
+              href={`/${activeMailer}`}
+              target="_blank"
+              rel="noopener"
+              className="ml-auto text-sm font-medium text-navy-500 underline underline-offset-2 hover:text-navy-800"
+            >
+              View /{activeMailer} &rarr;
+            </a>
+          </MailerSwitcher>
           {/* Campaign sections */}
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <p className="text-sm text-navy-500">Loading campaigns...</p>
             </div>
           ) : (() => {
-            const sorted = campaigns.slice().sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+            const sorted = campaigns
+              .filter((c) => (c.mailer || DEFAULT_MAILER) === activeMailer)
+              .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
             const mailCampaigns = sorted.filter((c) => c.type === "mailto");
             const webCampaigns = sorted.filter((c) => c.type === "clipboard");
             return (
@@ -1123,7 +1196,9 @@ export default function AdminDashboardPage() {
         </>
       )}
 
-      {activeTab === "statistics" && <StatsTab />}
+      {activeTab === "statistics" && (
+        <StatsTab mailer={statsMailer} onMailerChange={setStatsMailer} />
+      )}
 
       {/* Toast */}
       {toastMsg && (

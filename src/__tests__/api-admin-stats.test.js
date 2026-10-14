@@ -43,8 +43,8 @@ const BY_CAMPAIGN_ROWS = {
   ],
 };
 
-function makeRequest() {
-  return {};
+function makeRequest(query = "") {
+  return { url: `http://localhost/api/admin/stats${query}` };
 }
 
 describe("GET /api/admin/stats", () => {
@@ -94,6 +94,40 @@ describe("GET /api/admin/stats", () => {
     const res = await GET(makeRequest());
     const noSends = res.body.by_campaign.find((c) => c.campaign_id === 2);
     expect(noSends.last_sent_at).toBeNull();
+  });
+
+  it("filters every query by mailer when ?mailer is given", async () => {
+    mockExecute
+      .mockResolvedValueOnce(TOTAL_ROW)
+      .mockResolvedValueOnce(BY_DAY_ROWS)
+      .mockResolvedValueOnce(BY_CAMPAIGN_ROWS);
+
+    const res = await GET(makeRequest("?mailer=ridn"));
+    expect(res.status).toBe(200);
+    expect(mockExecute).toHaveBeenCalledTimes(3);
+    for (const [query] of mockExecute.mock.calls) {
+      expect(query.sql).toContain("c.mailer = ?");
+      expect(query.args).toEqual(["ridn"]);
+    }
+  });
+
+  it("does not filter by mailer when ?mailer is omitted", async () => {
+    mockExecute
+      .mockResolvedValueOnce(TOTAL_ROW)
+      .mockResolvedValueOnce(BY_DAY_ROWS)
+      .mockResolvedValueOnce(BY_CAMPAIGN_ROWS);
+
+    await GET(makeRequest());
+    for (const [query] of mockExecute.mock.calls) {
+      expect(query.sql).not.toContain("c.mailer = ?");
+      expect(query.args).toEqual([]);
+    }
+  });
+
+  it("returns 400 for an unknown mailer", async () => {
+    const res = await GET(makeRequest("?mailer=nope"));
+    expect(res.status).toBe(400);
+    expect(mockExecute).not.toHaveBeenCalled();
   });
 
   it("returns 500 when the database throws", async () => {

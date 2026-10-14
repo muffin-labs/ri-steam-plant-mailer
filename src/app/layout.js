@@ -1,13 +1,13 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Save the Roosevelt Island Steam Plant — Take Action",
+  title: "Roosevelt Island — Take Action",
   description:
-    "The City is rushing to demolish an 87-year-old Roosevelt Island landmark without following the law. Join thousands of residents fighting back. Send a letter to your elected officials in under 2 minutes.",
+    "Send a letter to your elected officials in under 2 minutes. Choose a Roosevelt Island campaign and make your voice heard.",
   openGraph: {
-    title: "Save the Roosevelt Island Steam Plant — Take Action",
+    title: "Roosevelt Island — Take Action",
     description:
-      "The City is rushing to demolish an 87-year-old landmark without following the law. Residents are fighting back.",
+      "Send a letter to your elected officials in under 2 minutes.",
     type: "website",
   },
 };

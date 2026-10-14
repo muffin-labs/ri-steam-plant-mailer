@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Admin — Steam Plant Mailer",
+  title: "Admin — Roosevelt Island Mailers",
 };
 
 export default function AdminLayout({ children }) {

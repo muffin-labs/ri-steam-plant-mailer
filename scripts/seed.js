@@ -1,4 +1,6 @@
-require("dotenv").config({ path: ".env.local" });
+// ENV_FILE selects the database: .env.local (default) or .env.prod via the :prod npm scripts.
+const envFile = process.env.ENV_FILE || ".env.local";
+require("dotenv").config({ path: envFile, quiet: true });
 
 const { createClient } = require("@libsql/client");
 const bcrypt = require("bcryptjs");
@@ -110,10 +112,92 @@ Sincerely,
     sort_order: 5,
     recipients: [],
   },
+
+  // ---------------------------------------------------------------------------
+  // /ridn — Roosevelt Island Day Nursery families: fund 3-K and Pre-K
+  // ---------------------------------------------------------------------------
+  {
+    mailer: "ridn",
+    name: "Elected leaders — Increase 3K & Pre-K Funding",
+    description: null,
+    type: "mailto",
+    subject: "Please Increase Funding for 3-K and Pre-K",
+    body_template: `Dear Council Members,
+
+My name is {{first_name}} {{last_name}}, and I am a parent of a child at the Roosevelt Island Day Nursery. I live at {{address}}.
+
+I am writing to urge you to increase funding for New York City's 3-K and Pre-K programs in the upcoming budget.
+
+Free, high-quality early childhood education is one of the most important investments our city can make. It prepares children for kindergarten and beyond, and it allows parents to keep working and keep living in New York City. For many families like mine, these programs are not a luxury; they are what make it possible to raise a family here.
+
+Yet families across the city still face a shortage of seats, long commutes to available programs, and uncertainty from year to year about whether funding will continue. Providers struggle to recruit and retain qualified teachers when pay does not keep pace with the cost of living.
+
+I respectfully ask that you:
+- Fully fund 3-K and Pre-K so every family who wants a seat can get one close to home
+- Protect the community-based programs that families rely on from budget cuts
+- Support fair pay for early childhood educators so programs can attract and keep great teachers
+
+Our children only get one chance at these early years. Please stand with New York families and make 3-K and Pre-K a funding priority.
+
+Thank you for your time and your service.
+
+Sincerely,
+{{first_name}} {{last_name}}
+{{address}}`,
+    form_url: null,
+    sort_order: 1,
+    recipients: [
+      { name: "Julie Menin", title: "Speaker", email: "SpeakerMenin@council.nyc.gov" },
+      { name: "District 5", title: null, email: "District5@council.nyc.gov" },
+    ],
+  },
+  {
+    mailer: "ridn",
+    name: "State Legislature — Fund 3-K & Pre-K",
+    description: null,
+    type: "mailto",
+    subject: "Please Increase State Funding for 3-K and Pre-K",
+    body_template: `Dear Assembly Member,
+
+My name is {{first_name}} {{last_name}}, and I am a parent of a child at the Roosevelt Island Day Nursery. I live at {{address}}.
+
+I am writing to ask you to fight for increased state funding for 3-K and Pre-K programs in New York City.
+
+Early childhood education gives children a strong start in school and in life, and it lets working parents stay in the workforce. New York City's programs depend on reliable state support, and families need to know that their child's seat will still be there next year.
+
+I urge you to:
+- Increase and protect state funding for universal Pre-K and 3-K
+- Ensure that funding reaches the community-based providers that serve our neighborhoods
+- Support fair compensation for early childhood educators
+
+Please make early childhood education a priority in the state budget. Our families are counting on you.
+
+Thank you for your time and your service.
+
+Sincerely,
+{{first_name}} {{last_name}}
+{{address}}`,
+    form_url: null,
+    sort_order: 2,
+    recipients: [
+      { name: "Rebecca Seawright", title: "Assembly Member", email: "SeawrightR@nyassembly.gov" },
+    ],
+  },
+  {
+    mailer: "ridn",
+    name: "Mayor's Office — Website Message",
+    description: null,
+    type: "clipboard",
+    subject: null,
+    body_template: `I am a parent of a child at the Roosevelt Island Day Nursery, and I am asking the Mayor to increase funding for 3-K and Pre-K. Free, high-quality early childhood education prepares our children for school and makes it possible for working families to stay in New York City. Please fully fund 3-K and Pre-K so every family who wants a seat can get one close to home, protect community-based programs from cuts, and support fair pay for early childhood educators. Thank you.`,
+    form_url: "https://www.nyc.gov/mayors-office/contact-the-mayor",
+    sort_order: 3,
+    recipients: [],
+  },
 ];
 
 async function seed() {
-  console.log("Seeding database...");
+  console.log(`Seeding ${process.env.TURSO_DATABASE_URL} (${envFile})...`);
 
   try {
     // Seed admin_config with default password hash for "changeme"
@@ -124,10 +208,22 @@ async function seed() {
     });
     console.log("Seeded admin_config with default password hash.");
 
+    // Only seed mailers that have no campaigns yet, so re-running is safe and
+    // adding a new mailer here doesn't duplicate the existing ones.
+    const existing = await db.execute(
+      "SELECT DISTINCT mailer FROM campaigns"
+    );
+    const seededMailers = new Set(existing.rows.map((r) => r.mailer));
+
     for (const campaign of campaigns) {
+      const mailer = campaign.mailer || "steamplant";
+      if (seededMailers.has(mailer)) {
+        console.log(`Skipping "${campaign.name}" (${mailer} already has campaigns)`);
+        continue;
+      }
       const result = await db.execute({
-        sql: `INSERT INTO campaigns (name, description, type, subject, body_template, form_url, sort_order, is_active)
-              VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+        sql: `INSERT INTO campaigns (name, description, type, subject, body_template, form_url, sort_order, is_active, mailer)
+              VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)`,
         args: [
           campaign.name,
           campaign.description,
@@ -136,6 +232,7 @@ async function seed() {
           campaign.body_template,
           campaign.form_url,
           campaign.sort_order,
+          mailer,
         ],
       });
 

@@ -45,3 +45,6 @@ next-env.d.ts
 local.db
 
 .playwright-mcp
+
+# production database credentials (used only by the db:*:prod scripts)
+.env.prod
