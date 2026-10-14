@@ -20,15 +20,15 @@ export const MAILERS = [
   },
   {
     slug: "ridn",
-    name: "Fix the Preschool Funding Gap",
+    name: "Increase Preschool Funding",
     eyebrow: "Save our Schools",
-    heading: "Fix the Preschool Funding Gap",
+    heading: "Increase Preschool Funding",
     intro:
       "Public funding doesn’t cover 3K and pre-K at community-based schools like Roosevelt Island Day Nursery. Ask your reps for more funding.",
     summary:
       "Public funding doesn’t cover 3K and pre-K at community-based schools like Roosevelt Island Day Nursery. Ask your reps for more funding.",
     metadata: {
-      title: "Fix the Preschool Funding Gap — Roosevelt Island Day Nursery",
+      title: "Increase Preschool Funding — Roosevelt Island Day Nursery",
       description:
         "Public funding doesn’t cover 3K and pre-K at community-based schools like Roosevelt Island Day Nursery. Ask your elected officials to increase funding in under 2 minutes.",
       ogDescription:
