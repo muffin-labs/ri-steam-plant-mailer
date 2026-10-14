@@ -20,19 +20,19 @@ export const MAILERS = [
   },
   {
     slug: "ridn",
-    name: "Bridge the Preschool Funding Gap",
-    eyebrow: "Take Action to Save our Schools",
-    heading: "Bridge the Preschool Funding Gap",
+    name: "Fix the Preschool Funding Gap",
+    eyebrow: "Save our Schools",
+    heading: "Fix the Preschool Funding Gap",
     intro:
-      "Public funding doesn’t cover 3K and pre-K at community-based schools like Roosevelt Island Day Nursery. Ask your officials to fix it.",
+      "Public funding doesn’t cover 3K and pre-K at community-based schools like Roosevelt Island Day Nursery. Ask your reps to increase funding.",
     summary:
-      "Public funding doesn’t cover 3K and pre-K at community-based schools like Roosevelt Island Day Nursery. Ask your officials to fix it.",
+      "Public funding doesn’t cover 3K and pre-K at community-based schools like Roosevelt Island Day Nursery. Ask your reps to increase funding.",
     metadata: {
-      title: "Bridge the Preschool Funding Gap — Roosevelt Island Day Nursery",
+      title: "Fix the Preschool Funding Gap — Roosevelt Island Day Nursery",
       description:
-        "Public funding doesn’t cover 3K and pre-K at community-based schools like Roosevelt Island Day Nursery. Ask your elected officials to fix it in under 2 minutes.",
+        "Public funding doesn’t cover 3K and pre-K at community-based schools like Roosevelt Island Day Nursery. Ask your elected officials to increase funding in under 2 minutes.",
       ogDescription:
-        "Public funding doesn’t cover 3K and pre-K at community-based schools like Roosevelt Island Day Nursery. Ask your officials to fix it.",
+        "Public funding doesn’t cover 3K and pre-K at community-based schools like Roosevelt Island Day Nursery. Ask your reps to increase funding.",
     },
   },
 ];
