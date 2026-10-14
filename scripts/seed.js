@@ -118,81 +118,77 @@ Sincerely,
   // ---------------------------------------------------------------------------
   {
     mailer: "ridn",
-    name: "Elected leaders — Increase 3K & Pre-K Funding",
-    description: null,
+    name: "Increase 3K & Pre-K Funding",
+    description: "Send an email to Dept. of Education contacts, elected representatives, RIOC and CB8 asking them to advocate for increased funding for Pre-K and 3K classes.",
     type: "mailto",
-    subject: "Please Increase Funding for 3-K and Pre-K",
-    body_template: `Dear Council Members,
+    subject: "URGENT: Increase Funding for 3-K and Pre-K",
+    body_template: `Dear City and State Leaders,
 
-My name is {{first_name}} {{last_name}}, and I am a parent of a child at the Roosevelt Island Day Nursery. I live at {{address}}.
+I am a parent at Roosevelt Island Day Nursery (RIDN), which partners with the New York City Department of Education to provide 3K and pre-K classrooms on Roosevelt Island. I’m writing because our classrooms are thriving, but the DOE’s funding model can’t sustain them, putting RIDN and other community-based organizations (CBOs) at risk.
 
-I am writing to urge you to increase funding for New York City's 3-K and Pre-K programs in the upcoming budget.
+I respectfully ask you to do everything in your power to advocate for increased funding and timely payments to CBOs for 3K/Pre-K seats.
 
-Free, high-quality early childhood education is one of the most important investments our city can make. It prepares children for kindergarten and beyond, and it allows parents to keep working and keep living in New York City. For many families like mine, these programs are not a luxury; they are what make it possible to raise a family here.
+The CBO funding gap was the subject of a recent New York Magazine article [https://nymag.com/intelligencer/article/2k-free-child-care-nyc-budgets-cbo-preschool.html]. According to the article, CBOs like RIDN run about half of the city’s pre-K programs, making them critical partners in the City’s commitment to universal early childhood programs. But the City’s reimbursement rate to CBOs has remained stagnant since 2014. This has created an untenable financial situation that may force RIDN and other CBOS to scale back their participation in the City’s early childhood programs.
 
-Yet families across the city still face a shortage of seats, long commutes to available programs, and uncertainty from year to year about whether funding will continue. Providers struggle to recruit and retain qualified teachers when pay does not keep pace with the cost of living.
+RIDN has served the community for over 50 years and is widely recognized for its experienced teachers, strong curriculum, and supportive, inclusive environment. Families are doing their part to keep operations afloat. Last year, 92% of RIDN families donated to the annual fundraiser.
 
-I respectfully ask that you:
-- Fully fund 3-K and Pre-K so every family who wants a seat can get one close to home
-- Protect the community-based programs that families rely on from budget cuts
-- Support fair pay for early childhood educators so programs can attract and keep great teachers
+This is a high-performing early education program with an exceptionally committed parent community. But behind the scenes, finances are precarious, and the numbers tell a worrying story:
 
-Our children only get one chance at these early years. Please stand with New York families and make 3-K and Pre-K a funding priority.
+• $15,500: Average DOE reimbursement rate per 3K/Pre-K seat
+• $17,100: Average bare minimum cost of providing seat, excluding administrative and operating costs and enrichment activities like art and music
+• $123,000: Delinquent amount DOE owes RIDN for last year’s 3K/Pre-K programs
+• Without donations, RIDN faces an annual deficit of around $100,000
 
-Thank you for your time and your service.
+In other words, RIDN's fundraising and tuition-based daycare programs are subsidizing DOE-funded education, using private money to keep "free" public classrooms afloat. This is not sustainable. NYC families cannot reasonably be expected to cover a systemic public funding gap.
+
+Moreover, RIDN routinely experiences operational hurdles to facilitating DOE programs:
+
+• The online DOE budgeting system has been unreliable, rejecting submissions over technicalities and forcing staff to spend weeks on workarounds just to submit a correct budget
+• DOE is so short on finance staff that an educational consultant (a curriculum expert) has been pulled into delivering funding messages, instead of supporting instruction
+
+If this pattern continues, RIDN and CBOs will eventually face painful choices, including:
+
+• Shrink, eliminate or consolidate classrooms, serving fewer children
+• Drain limited emergency reserves, leaving no cushion for unexpected costs
+• Opt out of City-funded 3K and pre-K programs
+
+To avoid forcing RIDN and other CBOs into these tough choices, I respectfully urge you to advocate for these DOE priorities:
+
+1. Fully fund the real cost of 3K and pre-K seats at CBOs: Increase per-child rates to a minimum of $18,000 per seat so they cover actual payroll, benefits, mandated meals, and operating costs
+
+2. Ensure timely payment to CBOs: Clear outstanding balances such as RIDN’s $123,000 and address chronic delays in payments to providers
+
+3. Fix broken budgeting and payment systems: Make DOE budget submission and payment systems reliable, transparent, and responsive, so schools can plan responsibly
+
+4. Stabilize and protect community-based providers: Treat CBOs as essential infrastructure in the city’s early education system, not as perpetually underfunded afterthoughts.
+
+Thank you for your attention to this issue and for your work on behalf of New York City’s children and families. I would be grateful for a response on how you plan to support sustainable funding for community-based 3K and pre-K programs like RIDN.
 
 Sincerely,
 {{first_name}} {{last_name}}
-{{address}}`,
+Parent of ___ in ___ class at RIDN
+{{address}}
+[Your Email / Phone]`,
     form_url: null,
     sort_order: 1,
     recipients: [
       { name: "Julie Menin", title: "Speaker", email: "SpeakerMenin@council.nyc.gov" },
       { name: "District 5", title: null, email: "District5@council.nyc.gov" },
-    ],
-  },
-  {
-    mailer: "ridn",
-    name: "State Legislature — Fund 3-K & Pre-K",
-    description: null,
-    type: "mailto",
-    subject: "Please Increase State Funding for 3-K and Pre-K",
-    body_template: `Dear Assembly Member,
-
-My name is {{first_name}} {{last_name}}, and I am a parent of a child at the Roosevelt Island Day Nursery. I live at {{address}}.
-
-I am writing to ask you to fight for increased state funding for 3-K and Pre-K programs in New York City.
-
-Early childhood education gives children a strong start in school and in life, and it lets working parents stay in the workforce. New York City's programs depend on reliable state support, and families need to know that their child's seat will still be there next year.
-
-I urge you to:
-- Increase and protect state funding for universal Pre-K and 3-K
-- Ensure that funding reaches the community-based providers that serve our neighborhoods
-- Support fair compensation for early childhood educators
-
-Please make early childhood education a priority in the state budget. Our families are counting on you.
-
-Thank you for your time and your service.
-
-Sincerely,
-{{first_name}} {{last_name}}
-{{address}}`,
-    form_url: null,
-    sort_order: 2,
-    recipients: [
+      { name: "Carolyn Ruvkun", title: "Speaker Menin’s office — Constituent Services", email: "cruvkun@council.nyc.gov" },
+      { name: "Harry Gale", title: "Speaker Menin’s office — District 5 Liaison", email: "hgale@council.nyc.gov" },
       { name: "Rebecca Seawright", title: "Assembly Member", email: "SeawrightR@nyassembly.gov" },
+      { name: "Community Board 8", title: "Manhattan Community Board 8", email: "info@cb8m.com" },
+      { name: "DOE Early Childhood Finance", title: "Division of Early Childhood Education (DECE)", email: "EarlyChildhoodFinance@schools.nyc.gov" },
+      { name: "DOE Early Childhood Education", title: "Division of Early Childhood Education (DECE)", email: "earlychildhood@schools.nyc.gov" },
+      { name: "DOE Early Childhood Expansion", title: "Division of Early Childhood Education (DECE)", email: "eceexpansion@schools.nyc.gov" },
+      { name: "Kelly McGuire", title: "District 2 Superintendent", email: "KMcGuire@schools.nyc.gov" },
+      { name: "Lalita Kovvuri", title: "District 2 Family Leadership Coordinator", email: "lkovvuri@schools.nyc.gov" },
+      { name: "Tina Sibulkin-Yacker", title: "District 2 Family Support Coordinator", email: "tsibulkinyacker@schools.nyc.gov" },
+      { name: "RIOC Board", title: "Roosevelt Island Operating Corporation Board of Directors", email: "riocboard@rioc.ny.gov" },
+      { name: "BJ Jones", title: "RIOC President", email: "BJ.Jones@rioc.ny.gov" },
+      { name: "Mary Cunneen", title: "RIOC Chief Operating Officer", email: "Mary.Cunneen@rioc.ny.gov" },
+      { name: "Bryant Daniels", title: "RIOC Assistant VP, Communications & Government Affairs", email: "Bryant.Daniels@rioc.ny.gov" },
     ],
-  },
-  {
-    mailer: "ridn",
-    name: "Mayor's Office — Website Message",
-    description: null,
-    type: "clipboard",
-    subject: null,
-    body_template: `I am a parent of a child at the Roosevelt Island Day Nursery, and I am asking the Mayor to increase funding for 3-K and Pre-K. Free, high-quality early childhood education prepares our children for school and makes it possible for working families to stay in New York City. Please fully fund 3-K and Pre-K so every family who wants a seat can get one close to home, protect community-based programs from cuts, and support fair pay for early childhood educators. Thank you.`,
-    form_url: "https://www.nyc.gov/mayors-office/contact-the-mayor",
-    sort_order: 3,
-    recipients: [],
   },
 ];
 
@@ -203,10 +199,10 @@ async function seed() {
     // Seed admin_config with default password hash for "changeme"
     const hash = await bcrypt.hash("changeme", 10);
     await db.execute({
-      sql: "INSERT OR REPLACE INTO admin_config (id, password_hash) VALUES (1, ?)",
+      sql: "INSERT OR IGNORE INTO admin_config (id, password_hash) VALUES (1, ?)",
       args: [hash],
     });
-    console.log("Seeded admin_config with default password hash.");
+    console.log("Seeded admin_config with default password hash (if not already set).");
 
     // Only seed mailers that have no campaigns yet, so re-running is safe and
     // adding a new mailer here doesn't duplicate the existing ones.
