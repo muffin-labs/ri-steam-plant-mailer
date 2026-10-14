@@ -21,10 +21,10 @@ export const MAILERS = [
   {
     slug: "ridn",
     name: "Fund 3-K & Pre-K",
-    eyebrow: "Roosevelt Island Day Nursery Families",
-    heading: "Fund 3-K and Pre-K",
+    eyebrow: "Take Action to Save our Schools",
+    heading: "Bridge the Preschool Funding Gap",
     intro:
-      "Early childhood education changes lives, and our families depend on it. Ask your elected officials to increase funding for 3-K and Pre-K in under 2 minutes.",
+      "Public funding doesn’t cover 3K and pre-K at community-based schools like Roosevelt Island Day Nursery. Ask your officials to fix it.",
     summary:
       "Roosevelt Island Day Nursery families asking elected officials to increase funding for 3-K and Pre-K programs.",
     metadata: {
