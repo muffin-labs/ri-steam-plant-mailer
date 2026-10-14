@@ -185,7 +185,7 @@ Parent of ___ in ___ class at RIDN
       { name: "Lalita Kovvuri", title: "District 2 Family Leadership Coordinator", email: "lkovvuri@schools.nyc.gov" },
       { name: "Tina Sibulkin-Yacker", title: "District 2 Family Support Coordinator", email: "tsibulkinyacker@schools.nyc.gov" },
       { name: "RIOC Board", title: "Roosevelt Island Operating Corporation Board of Directors", email: "riocboard@rioc.ny.gov" },
-      { name: "BJ Jones", title: "RIOC President", email: "BJ.Jones@rioc.ny.gov" },
+      { name: "BJ Jones", title: "RIOC President", email: "benjamin.jones@rioc.ny.gov" },
       { name: "Mary Cunneen", title: "RIOC Chief Operating Officer", email: "Mary.Cunneen@rioc.ny.gov" },
       { name: "Bryant Daniels", title: "RIOC Assistant VP, Communications & Government Affairs", email: "Bryant.Daniels@rioc.ny.gov" },
     ],
