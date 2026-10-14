@@ -24,7 +24,7 @@ export const MAILERS = [
     eyebrow: "Take Action to Save our Schools",
     heading: "Fix the Preschool Funding Gap",
     intro:
-      "Public funding doesn’t cover the cost of 3K and pre-K at Roosevelt Island Day Nursery. Ask your officials to increase funding.",
+      "Public funding doesn’t cover the cost of 3K and pre-K at community-based schools like Roosevelt Island Day Nursery. Ask your officials to increase funding.",
     summary:
       "Roosevelt Island Day Nursery families asking elected officials to increase funding for 3-K and Pre-K programs.",
     metadata: {
