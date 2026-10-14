@@ -22,7 +22,7 @@ export const MAILERS = [
     slug: "ridn",
     name: "Fund 3-K & Pre-K",
     eyebrow: "Roosevelt Island Families & Neighbors",
-    heading: "Fix the 3K/Pre-K Funding Gap",
+    heading: "Fix the Preschool Funding Gap",
     intro:
       "Public funding doesn’t cover the cost of 3K and pre-K at Roosevelt Island Day Nursery. Ask your officials to increase funding.",
     summary:
