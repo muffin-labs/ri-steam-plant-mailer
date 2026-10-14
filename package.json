@@ -9,6 +9,8 @@
     "lint": "next lint",
     "db:migrate": "node scripts/migrate.js",
     "db:seed": "node scripts/seed.js",
+    "db:migrate:prod": "ENV_FILE=.env.prod node scripts/migrate.js",
+    "db:seed:prod": "ENV_FILE=.env.prod node scripts/seed.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },

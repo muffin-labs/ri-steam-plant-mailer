@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { DEFAULT_MAILER, getMailer } from "@/lib/mailers";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,7 @@ export async function POST(request) {
       form_url,
       sort_order,
       is_active,
+      mailer,
     } = await request.json();
 
     if (!name) {
@@ -62,9 +64,13 @@ export async function POST(request) {
       );
     }
 
+    if (mailer && !getMailer(mailer)) {
+      return NextResponse.json({ error: "Unknown mailer" }, { status: 400 });
+    }
+
     const result = await db.execute({
-      sql: `INSERT INTO campaigns (name, description, type, subject, body_template, form_url, sort_order, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO campaigns (name, description, type, subject, body_template, form_url, sort_order, is_active, mailer)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         name,
         description || null,
@@ -74,6 +80,7 @@ export async function POST(request) {
         form_url || null,
         sort_order ?? 0,
         is_active ?? 1,
+        mailer || DEFAULT_MAILER,
       ],
     });
 
@@ -119,7 +126,12 @@ export async function PUT(request) {
       "form_url",
       "sort_order",
       "is_active",
+      "mailer",
     ];
+
+    if ("mailer" in fields && !getMailer(fields.mailer)) {
+      return NextResponse.json({ error: "Unknown mailer" }, { status: 400 });
+    }
 
     const setClauses = [];
     const args = [];

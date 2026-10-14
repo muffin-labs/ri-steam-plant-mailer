@@ -1,4 +1,6 @@
-require("dotenv").config({ path: ".env.local" });
+// ENV_FILE selects the database: .env.local (default) or .env.prod via the :prod npm scripts.
+const envFile = process.env.ENV_FILE || ".env.local";
+require("dotenv").config({ path: envFile, quiet: true });
 
 const { createClient } = require("@libsql/client");
 
@@ -8,7 +10,7 @@ const db = createClient({
 });
 
 async function migrate() {
-  console.log("Running migrations...");
+  console.log(`Running migrations against ${process.env.TURSO_DATABASE_URL} (${envFile})...`);
 
   try {
     await db.execute(`
@@ -57,6 +59,16 @@ async function migrate() {
       )
     `);
     console.log("Created table: sends");
+
+    // Each campaign belongs to one mailer page (/steamplant, /ridn, ...).
+    // Existing campaigns predate multiple mailers, so they default to steamplant.
+    const campaignCols = await db.execute("PRAGMA table_info(campaigns)");
+    if (!campaignCols.rows.some((c) => c.name === "mailer")) {
+      await db.execute(
+        "ALTER TABLE campaigns ADD COLUMN mailer TEXT NOT NULL DEFAULT 'steamplant'"
+      );
+      console.log("Added column: campaigns.mailer");
+    }
 
     console.log("All migrations completed successfully.");
   } catch (err) {
