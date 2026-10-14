@@ -9,7 +9,7 @@ The site hosts several independent mailers, each at its own path. The home page 
 | Path | Mailer |
 |---|---|
 | `/steamplant` | Save the Steam Plant — halt the Steam Plant demolition |
-| `/ridn` | Fund 3-K & Pre-K — Roosevelt Island Day Nursery families |
+| `/ridn` | Bridge the Preschool Funding Gap — Roosevelt Island Day Nursery families |
 
 Mailers are defined in `src/lib/mailers.js` (page heading, intro text, metadata). Each campaign belongs to one mailer via the `campaigns.mailer` column; in the admin panel, use the switcher at the top of the Campaigns tab to manage each mailer's campaigns.
 
