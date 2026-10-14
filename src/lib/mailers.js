@@ -24,7 +24,7 @@ export const MAILERS = [
     eyebrow: "Roosevelt Island Families & Neighbors",
     heading: "Fix the 3K/Pre-K Funding Gap",
     intro:
-      "Roosevelt Island Day Nursery is delivering the high-quality preschool classes NYC wants, but public funding does not cover the cost of providing them. Ask your elected officials to increase funding for 3K and pre-K in under two minutes.",
+      "Public funding doesn’t cover the cost of 3K and pre-K at Roosevelt Island Day Nursery. Ask your officials to increase funding.",
     summary:
       "Roosevelt Island Day Nursery families asking elected officials to increase funding for 3-K and Pre-K programs.",
     metadata: {
